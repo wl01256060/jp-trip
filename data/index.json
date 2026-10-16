@@ -1,0 +1,13 @@
+{
+  "trips": [
+    {
+      "id": "sample-kyoto",
+      "name": "範例：京都兩天",
+      "region": "京都",
+      "startDate": "2026-12-15",
+      "days": 2,
+      "file": "data/trips/sample-kyoto.json"
+    }
+  ],
+  "books": []
+}
