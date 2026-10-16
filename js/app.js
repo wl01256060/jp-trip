@@ -131,7 +131,6 @@
     for (const pid in t.places) { const [a, b] = placeProgress(t, pid); d += a; n += b; }
     return [d, n];
   }
-  function vocabProgress(t) { return [t.vocabList.filter(v => famOf(v.key) >= 3).length, t.vocabList.length]; }
 
   /* ---------------- 工具 ---------------- */
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -159,7 +158,7 @@
 
   /* ---------------- 畫面狀態（不保存） ---------------- */
   const ui = {
-    day: null, tf: 'all',
+    day: null,
     ptab: 'scen', variant: {}, cloze: {}, open: {}, menuItem: null,
     vmode: 'list', q: '', vcat: 'all', vday: 'all', vfam: 'all',
     pmode: 'flash', flash: null, cz: 0, ls: 0, lsShow: false,
@@ -177,15 +176,9 @@
     if (n === 0) return `${ds} 今天出發！`;
     return `${ds} 出發・旅程第 ${-n + 1} 天`;
   }
-  function bar(label, d, n) {
-    const pct = n ? Math.round(d / n * 100) : 0;
-    return `<div class="bar"><span>${label} ${d} / ${n}</span><div class="track"><div class="fill" style="width:${pct}%"></div></div></div>`;
-  }
   function tripHeader(t, tab) {
-    const [sd, sn] = tripProgress(t), [vd, vn] = vocabProgress(t);
     return `<header class="top">
       <div class="row between start"><div><h1>${esc(t.name)}</h1><div class="sub">${esc(countdown(t.startDate))}</div></div><a class="pill" href="#/trips">切換行程 ⇄</a></div>
-      <div class="bars">${bar('情境', sd, sn)}${bar('單字熟悉', vd, vn)}</div>
       <nav class="tabs"><a href="#/" class="${tab === 'home' ? 'on' : ''}">行程</a><a href="#/vocab" class="${tab === 'vocab' ? 'on' : ''}">單字表</a></nav>
     </header>`;
   }
@@ -210,21 +203,19 @@
     const day = t.days.find(d => d.day === ui.day) || t.days[0];
     if (!day) return tripHeader(t, 'home') + '<p class="empty">這個行程還沒有內容。</p>';
     ui.day = day.day;
-    const f = ui.tf;
     const steps = [];
     day.steps.forEach(s => {
-      if (s.kind === 'stop' && (f === 'all' || f === s.type)) steps.push(stepStop(t, s));
-      else if (s.kind === 'move' && f === 'all') steps.push(stepMove(t, s));
-      else if (s.kind === 'hotel' && f === 'all') steps.push(stepHotel(t, s));
+      if (s.kind === 'stop') steps.push(stepStop(t, s));
+      else if (s.kind === 'move') steps.push(stepMove(t, s));
+      else if (s.kind === 'hotel') steps.push(stepHotel(t, s));
     });
     return `${tripHeader(t, 'home')}
     <div class="bar2">
       <div class="chips" role="group" aria-label="選擇天數">${t.days.map(d => `<button class="chip ${d.day === day.day ? 'on' : ''}" data-act="day" data-day="${d.day}">Day ${d.day}</button>`).join('')}</div>
-      <div class="chips" role="group" aria-label="篩選類型"><span class="label">只看：</span>${[['all', '全部'], ['spot', '景點'], ['restaurant', '餐廳'], ['shop', '店家']].map(([k, l]) => `<button class="chip sm ${f === k ? 'on' : ''}" data-act="tf" data-tf="${k}">${l}</button>`).join('')}</div>
     </div>
     <section class="wrap" style="gap:0">
       <div class="daytitle">Day ${day.day}${day.area ? '・' + esc(day.area) : ''}・依順序</div>
-      ${steps.join('') || '<p class="empty">這天沒有這個類型的地點。</p>'}
+      ${steps.join('') || '<p class="empty">這天還沒有內容。</p>'}
     </section>`;
   }
   const rail = (num, cls = '') => `<div class="rail">${num != null ? `<span class="num ${cls}">${num}</span>` : ''}<span class="vline"></span></div>`;
@@ -539,7 +530,6 @@
     const t = curTrip;
     switch (a) {
       case 'day': ui.day = Number(d.day); render(); break;
-      case 'tf': ui.tf = d.tf; render(); break;
       case 'ptab': ui.ptab = d.tab; render(); break;
       case 'variant': ui.variant[d.key] = d.v; render(); break;
       case 'cloze': ui.cloze[d.key] = !ui.cloze[d.key]; render(); break;
